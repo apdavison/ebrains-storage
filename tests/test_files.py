@@ -4,12 +4,14 @@ import os
 import pytest
 
 from tests.utils import randstring, datafile, filesize
+from ebrains_drive.client import DriveApiClient
+from ebrains_drive.repo import Repo
 
 @pytest.mark.parametrize('parentpath', [
     '/',
     '/测试目录一-%s' % randstring()
 ])
-def test_create_delete_file_dir(repo, parentpath):
+def test_create_delete_file_dir(repo: Repo, parentpath: str) -> None:
     rootdir = repo.get_dir('/')
     assert len(rootdir.ls(force_refresh=True)) == 0
 
@@ -48,7 +50,7 @@ def test_create_delete_file_dir(repo, parentpath):
     '/',
     '/测试目录一-%s' % randstring()
 ])
-def test_upload_file(repo, parentpath):
+def test_upload_file(repo: Repo, parentpath: str) -> None:
     rootdir = repo.get_dir('/')
     assert len(rootdir.ls(force_refresh=True)) == 0
 
@@ -81,7 +83,7 @@ def test_upload_file(repo, parentpath):
     testfile.delete()
     assert len(parentdir.ls(force_refresh=True)) == 0
 
-def test_upload_string_as_file_content(repo):
+def test_upload_string_as_file_content(repo: Repo) -> None:
     # test pass as string as file content when upload file
     rootdir = repo.get_dir('/')
     fname = 'testfile-%s' % randstring()
@@ -95,7 +97,7 @@ def test_upload_string_as_file_content(repo):
     #'/测试目录一-%s' % randstring()
     '/qweqwe%s' % randstring()
 ])
-def test_rename_file(repo, parentpath):
+def test_rename_file(repo: Repo, parentpath: str) -> None:
     rootdir = repo.get_dir('/')
     assert len(rootdir.ls(force_refresh=True)) == 0
 
@@ -119,7 +121,7 @@ def test_rename_file(repo, parentpath):
     '/',
     '/测试目录一-%s' % randstring()
 ])
-def test_rename_folder(repo, parentpath):
+def test_rename_folder(repo: Repo, parentpath: str) -> None:
     rootdir = repo.get_dir('/')
     assert len(rootdir.ls(force_refresh=True)) == 0
 
@@ -143,7 +145,7 @@ def test_rename_folder(repo, parentpath):
     '/',
     '/测试目录一-%s' % randstring()
 ])
-def test_copy_file(repo, parentpath):
+def test_copy_file(repo: Repo, parentpath: str) -> None:
     rootdir = repo.get_dir('/')
     assert len(rootdir.ls(force_refresh=True)) == 0
 
@@ -168,7 +170,7 @@ def test_copy_file(repo, parentpath):
     '/',
     '/测试目录一-%s' % randstring()
 ])
-def test_copy_file_to_other_repo(client, repo, parentpath):
+def test_copy_file_to_other_repo(client: DriveApiClient, repo: Repo, parentpath: str) -> None:
     rootdir = repo.get_dir('/')
     assert len(rootdir.ls(force_refresh=True)) == 0
 
@@ -198,7 +200,7 @@ def test_copy_file_to_other_repo(client, repo, parentpath):
     '/',
     '/测试目录一-%s' % randstring()
 ])
-def test_copy_folder(repo, parentpath):
+def test_copy_folder(repo: Repo, parentpath: str) -> None:
     rootdir = repo.get_dir('/')
     assert len(rootdir.ls(force_refresh=True)) == 0
 
@@ -225,7 +227,7 @@ def test_copy_folder(repo, parentpath):
     '/',
     '/测试目录一-%s' % randstring()
 ])
-def test_copy_folder_to_other_repo(client, repo, parentpath):
+def test_copy_folder_to_other_repo(client: DriveApiClient, repo: Repo, parentpath: str) -> None:
     rootdir = repo.get_dir('/')
     assert len(rootdir.ls(force_refresh=True)) == 0
 
@@ -257,7 +259,7 @@ def test_copy_folder_to_other_repo(client, repo, parentpath):
     '/',
     '/测试目录一-%s' % randstring()
 ])
-def test_move_file(repo, parentpath):
+def test_move_file(repo: Repo, parentpath: str) -> None:
     rootdir = repo.get_dir('/')
     assert len(rootdir.ls(force_refresh=True)) == 0
 
@@ -283,7 +285,7 @@ def test_move_file(repo, parentpath):
     '/',
     '/测试目录一-%s' % randstring()
 ])
-def test_move_file_to_other_repo(client, repo, parentpath):
+def test_move_file_to_other_repo(client: DriveApiClient, repo: Repo, parentpath: str) -> None:
     rootdir = repo.get_dir('/')
     assert len(rootdir.ls(force_refresh=True)) == 0
 
@@ -314,7 +316,7 @@ def test_move_file_to_other_repo(client, repo, parentpath):
     '/',
     '/测试目录一-%s' % randstring()
 ])
-def test_move_folder(repo, parentpath):
+def test_move_folder(repo: Repo, parentpath: str) -> None:
     rootdir = repo.get_dir('/')
     assert len(rootdir.ls(force_refresh=True)) == 0
 
@@ -339,7 +341,7 @@ def test_move_folder(repo, parentpath):
     '/',
     '/测试目录一-%s' % randstring()
 ])
-def test_move_folder_to_other_repo(client, repo, parentpath):
+def test_move_folder_to_other_repo(client: DriveApiClient, repo: Repo, parentpath: str) -> None:
     rootdir = repo.get_dir('/')
     assert len(rootdir.ls(force_refresh=True)) == 0
 

@@ -9,7 +9,7 @@ def randstring(length=0):
         length = random.randint(1, 30)
     return ''.join(random.choice(string.lowercase) for i in range(length))
 
-def urljoin(base, *args):
+def urljoin(base: str, *args) -> str:
     url = base
     if url[-1] != '/':
         url += '/'
@@ -41,7 +41,7 @@ def to_utf8(obj):
         return obj.encode('utf-8')
     return obj
 
-def querystr(**kwargs):
+def querystr(**kwargs) -> str:
     return '?' + urlencode(kwargs)
 
 def utf8lize(obj):

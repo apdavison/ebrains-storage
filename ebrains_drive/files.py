@@ -2,7 +2,17 @@ import io
 import os
 import posixpath
 import re
+from typing import Dict, List, Optional, Union, BinaryIO, Mapping, Sequence
+#from typing import TypeAlias  # Python 3.10+
 from ebrains_drive.utils import querystr
+from requests.models import Response
+
+if False:
+    # for forward-reference type-checking:
+    from ebrains_drive.repo import Repo
+
+EntryAsJSON = Dict[str, Union[str, int, None]]
+
 
 # Note: only files and dirs with contents is assigned an ID; else their ID is set to all zeros
 ZERO_OBJ_ID = '0000000000000000000000000000000000000000'
@@ -12,9 +22,9 @@ class _SeafDirentBase(object):
 
     It provides implementation of their common operations.
     """
-    isdir = None
+    isdir: Optional[bool] = None
 
-    def __init__(self, repo, path, object_id, obj_type, size=0):
+    def __init__(self, repo: "Repo", path: str, object_id: str, obj_type: str, size: int=0) -> None:
         """
         :param:`path` the full path of this entry within its repo, like
         "/documents/example.md"
@@ -29,19 +39,19 @@ class _SeafDirentBase(object):
         self.size = size
 
     @property
-    def name(self):
+    def name(self) -> str:
         return posixpath.basename(self.path)
 
     def list_revisions(self):
         pass
 
-    def delete(self):
+    def delete(self) -> Response:
         suffix = 'dir' if self.isdir else 'file'
         url = '/api2/repos/%s/%s/' % (self.repo.id, suffix) + querystr(p=self.path)
         resp = self.client.delete(url)
         return resp
 
-    def rename(self, newname):
+    def rename(self, newname: str) -> bool:
         """Change file/folder name to newname
         """
         suffix = 'dir' if self.isdir else 'file'
@@ -58,7 +68,7 @@ class _SeafDirentBase(object):
                 self.__dict__[key] = new_dirent.__dict__[key]
         return succeeded
 
-    def _copy_move_task(self, operation, dirent_type, dst_dir, dst_repo_id=None):
+    def _copy_move_task(self, operation: str, dirent_type: str, dst_dir: str, dst_repo_id: Optional[str]=None) -> Response:
         url = '/api/v2.1/copy-move-task/'
         src_repo_id = self.repo.id
         src_parent_dir = os.path.dirname(self.path)
@@ -73,7 +83,7 @@ class _SeafDirentBase(object):
                     'dirent_type': dirent_type}
         return self.client.post(url, data=postdata)
 
-    def copyTo(self, dst_dir, dst_repo_id=None):
+    def copyTo(self, dst_dir: str, dst_repo_id: Optional[str]=None) -> bool:
         """Copy file/folder to other directory (also to a different repo)
         """
         if dst_repo_id is None:
@@ -83,7 +93,7 @@ class _SeafDirentBase(object):
         resp = self._copy_move_task('copy', dirent_type, dst_dir, dst_repo_id)
         return resp.status_code == 200
 
-    def moveTo(self, dst_dir, dst_repo_id=None):
+    def moveTo(self, dst_dir: str, dst_repo_id: Optional[str]=None) -> bool:
         """Move file/folder to other directory (also to a different repo)
         """
         if dst_repo_id is None:
@@ -106,15 +116,16 @@ class _SeafDirentBase(object):
     def get_share_link(self):
         pass
 
+
 class SeafDir(_SeafDirentBase):
     isdir = True
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         super(SeafDir, self).__init__(*args, **kwargs)
-        self.entries = None
+        self.entries: Optional[List[Union["SeafFile", "SeafDir"]]] = None
         self.entries = kwargs.pop('entries', None)
 
-    def ls(self, entity_type=None, force_refresh=True):
+    def ls(self, entity_type: Optional[str]=None, force_refresh: bool=True) -> List[Union["SeafFile", "SeafDir"]]:
         """List the entries in this dir.
 
         Return a list of objects of class :class:`SeafFile` or :class:`SeafDir`.
@@ -123,6 +134,7 @@ class SeafDir(_SeafDirentBase):
             raise ValueError("Invalid value for parameter `entity_type`; must be 'file' or 'dir'!")
         if self.entries is None or force_refresh:
             self.load_entries()
+        assert self.entries is not None  # for the type-checker
 
         if entity_type:
             return [x for x in self.entries if x.type == entity_type]
@@ -139,7 +151,7 @@ class SeafDir(_SeafDirentBase):
         resp = self.client.put(url, data=putdata)
         return resp.status_code == 200
 
-    def create_empty_file(self, name):
+    def create_empty_file(self, name: str) -> "SeafFile":
         """Create a new empty file in this dir.
         Return a :class:`SeafFile` object of the newly created file.
         """
@@ -152,9 +164,9 @@ class SeafDir(_SeafDirentBase):
         self.load_entries(resp.json())
         return SeafFile(self.repo, path, ZERO_OBJ_ID, "file", 0)
 
-    def check_exists(self, name, entity_type=None):
+    def check_exists(self, name: str, entity_type: None=None) -> Union["SeafDir", "SeafFile", bool]:
         """Check if an entity with specified name exists in current directory
-        Note: seafile doesn't allow even a sub-directory and file, 
+        Note: seafile doesn't allow even a sub-directory and file,
               within the same directory, to have the same name
         """
         entity_list = self.ls(entity_type=entity_type, force_refresh=True)
@@ -163,7 +175,7 @@ class SeafDir(_SeafDirentBase):
                 return e
         return False
 
-    def mkdir(self, name):
+    def mkdir(self, name: str) -> "SeafDir":
         """Create a new sub folder right under this dir.
 
         Return a :class:`SeafDir` object of the newly created sub folder.
@@ -182,7 +194,7 @@ class SeafDir(_SeafDirentBase):
         # fetch and return created directory object
         return SeafDir(self.repo, path, ZERO_OBJ_ID, "dir")
 
-    def upload(self, fileobj, filename):
+    def upload(self, fileobj: Union[bytes, BinaryIO], filename: str) -> "SeafFile":
         """Upload a file to this folder.
 
         :param:fileobj :class:`File` like object
@@ -217,14 +229,16 @@ class SeafDir(_SeafDirentBase):
                 a = entity_obj.delete()
             else:
                 raise FileExistsError("File/directory with name = `{}` already exists in current directory!".format(name))
-        
+
         with open(filepath, 'rb') as fp:
             return self.upload(fp, name)
 
-    def _get_upload_link(self):
+    def _get_upload_link(self) -> str:
         url = '/api2/repos/%s/upload-link/' % self.repo.id
         resp = self.client.get(url)
-        return re.match(r'"(.*)"', resp.text).group(1)
+        match = re.match(r'"(.*)"', resp.text)
+        assert match is not None  # for type checker
+        return match.group(1)
 
     def get_uploadable_sharelink(self):
         """Generate a uploadable shared link to this dir.
@@ -233,16 +247,20 @@ class SeafDir(_SeafDirentBase):
         """
         pass
 
-    def load_entries(self, dirents_json=None):
+    def load_entries(self, dirents_json: Optional[List[EntryAsJSON]]=None) -> None:
         if dirents_json is None:
             url = '/api2/repos/%s/dir/' % self.repo.id + querystr(p=self.path)
             dirents_json = self.client.get(url).json()
 
         self.entries = [self._load_dirent(entry_json) for entry_json in dirents_json]
 
-    def _load_dirent(self, dirent_json):
+    def _load_dirent(self, dirent_json: EntryAsJSON) -> Union["SeafFile", "SeafDir"]:
+        assert isinstance(dirent_json['name'], str)  # for the type checker
+        assert isinstance(dirent_json['id'], str)
+        assert isinstance(dirent_json['type'], str)
         path = posixpath.join(self.path, dirent_json['name'])
         if dirent_json['type'] == 'file':
+            assert isinstance(dirent_json['size'], int)
             return SeafFile(self.repo, path, dirent_json['id'], dirent_json['type'], dirent_json['size'])
         else:
             return SeafDir(self.repo, path, dirent_json['id'], dirent_json['type'], 0)
@@ -259,9 +277,10 @@ class SeafDir(_SeafDirentBase):
 
     __repr__ = __str__
 
+
 class SeafFile(_SeafDirentBase):
     isdir = False
-    
+
     def update(self, fileobj):
         """Update the content of this file"""
         pass
@@ -272,12 +291,14 @@ class SeafFile(_SeafDirentBase):
 
     __repr__ = __str__
 
-    def _get_download_link(self):
+    def _get_download_link(self) -> str:
         url = '/api2/repos/%s/file/' % self.repo.id + querystr(p=self.path)
         resp = self.client.get(url)
-        return re.match(r'"(.*)"', resp.text).group(1)
+        match = re.match(r'"(.*)"', resp.text)
+        assert match is not None  # for the type checker
+        return match.group(1)
 
-    def get_content(self):
+    def get_content(self) -> bytes:
         """Get the content of the file"""
         url = self._get_download_link()
         return self.client.get(url).content

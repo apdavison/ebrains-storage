@@ -5,16 +5,15 @@ import pytest
 
 import ebrains_drive
 from tests.utils import randstring
+from ebrains_drive.client import DriveApiClient
 
 
 USER = os.environ.get('SEAFILE_TEST_USERNAME', 'test@seafiletest.com')
 TOKEN = os.environ.get('SEAFILE_TEST_TOKEN', 'testtest')
-ADMIN_USER = os.environ.get('SEAFILE_TEST_ADMIN_USERNAME', 'admin@seafiletest.com')
-ADMIN_TOKEN = os.environ.get('SEAFILE_TEST_ADMIN_TOKEN', 'adminadmin')
 
 
 @pytest.fixture(scope='session')
-def client():
+def client() -> DriveApiClient:
     return ebrains_drive.client.DriveApiClient(username=USER, token=TOKEN, env="int")
 
 

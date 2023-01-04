@@ -4,28 +4,38 @@ from ebrains_drive.exceptions import ClientHttpError
 from ebrains_drive.repos import Repos
 from ebrains_drive.file import File
 import re
+from requests.models import Response
+from typing import Optional
 
 class DriveApiClient(object):
     """Wraps seafile web api"""
-    def __init__(self, username=None, password=None, token=None, env=""):
+    def __init__(
+        self,
+        username: Optional[str]=None,
+        password: Optional[str]=None,
+        token: Optional[str]=None,
+        env: str=""
+    ) -> None:
         """Wraps various basic operations to interact with seahub http api.
         """
         self._set_env(env)
 
         self.server = self.drive_url
-        
+
         self.username = username
         self.password = password
-        self._token = token
 
-        self.repos = Repos(self)
+
+        self.repos: Repos = Repos(self)
         self.groups = Groups(self)
         self.file = File(self)
 
         if token is None:
             self._get_token()
+        else:
+            self._token = token
 
-    def _set_env(self, env=''):
+    def _set_env(self, env: str='') -> None:
         self.suffix = ""
 
         if env == "dev":
@@ -40,10 +50,10 @@ class DriveApiClient(object):
 
     def get_drive_url(self):
         return self.drive_url
-    
+
     def get_iam_host(self):
         return self.iam_host
-    
+
     def get_iam_url(self):
         return self.iam_url
 
@@ -57,26 +67,26 @@ class DriveApiClient(object):
                 'password':self.password
             })
 
-        self._token = response.json()['access_token']
+        self._token: str = response.json()['access_token']
 
-    def __str__(self):
+    def __str__(self) -> str:
         return 'DriveApiClient[server=%s, user=%s]' % (self.server, self.username)
 
     __repr__ = __str__
 
-    def get(self, *args, **kwargs):
+    def get(self, *args, **kwargs) -> Response:
         return self._send_request('GET', *args, **kwargs)
 
-    def post(self, *args, **kwargs):
+    def post(self, *args, **kwargs) -> Response:
         return self._send_request('POST', *args, **kwargs)
 
     def put(self, *args, **kwargs):
         return self._send_request('PUT', *args, **kwargs)
 
-    def delete(self, *args, **kwargs):
+    def delete(self, *args, **kwargs) -> Response:
         return self._send_request('delete', *args, **kwargs)
 
-    def _send_request(self, method, url, *args, **kwargs):
+    def _send_request(self, method: str, url: str, *args, **kwargs) -> Response:
         if not url.startswith('http'):
             url = urljoin(self.server, url)
 
@@ -97,7 +107,7 @@ class DriveApiClient(object):
 
 
 class Groups(object):
-    def __init__(self, client):
+    def __init__(self, client: "DriveApiClient") -> None:
         pass
 
     def create_group(self, name):

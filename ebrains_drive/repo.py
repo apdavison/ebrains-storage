@@ -1,17 +1,35 @@
 from urllib.parse import urlencode
+from typing import Dict
+
 from ebrains_drive.files import SeafDir, SeafFile
 from ebrains_drive.utils import raise_does_not_exist
+if False:
+    # for forward-reference type-checking:
+    from ebrains_drive.client import DriveApiClient
+
+
+RepoAsJSON = Dict[str, str]
+
 
 class Repo(object):
     """
     A seafile library
     """
-    def __init__(self, client, **kwargs):
+    def __init__(self, client: "DriveApiClient", **kwargs) -> None:
         self.client = client
 
-        allowed_keys = ['encrypted', 'group_name', 'groupid', 'head_commit_id', 'id', 'modifier_contact_email', 'modifier_email', 'modifier_name', 'mtime', 'mtime_relative', 'name', 'owner', 'owner_contact_email', 'owner_name', 'permission', 'root', 'share_from', 'share_from_contact_email', 'share_from_name', 'share_type', 'size', 'size_formatted', 'type', 'version', 'virtual']
-        # Update __dict__ but only for keys that have been predefined 
+        allowed_keys = ['encrypted', 'group_name', 'groupid', 'head_commit_id', 'id',
+                        'modifier_contact_email', 'modifier_email', 'modifier_name', 'mtime',
+                        'mtime_relative', 'name', 'owner', 'owner_contact_email', 'owner_name',
+                        'permission', 'root', 'share_from', 'share_from_contact_email',
+                        'share_from_name', 'share_type', 'size', 'size_formatted', 'type',
+                        'version', 'virtual']
+        # Update __dict__ but only for keys that have been predefined
         # (silently ignore others)
+        self.id = ""      # for type checker: will
+        self.name = ""    #   be overwritten
+        self.owner = ""   #
+
         self.__dict__.update((key, value) for key, value in kwargs.items() if key in allowed_keys)
         # To NOT silently ignore rejected keys
         # rejected_keys = set(kwargs.keys()) - set(allowed_keys)
@@ -21,18 +39,18 @@ class Repo(object):
     def __str__(self):
         return "(id='{}', name='{}')".format(self.id, self.name)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "ebrains_drive.repo.Repo(id='{}', name='{}')".format(self.id, self.name)
 
     @classmethod
-    def from_json(cls, client, repo_json):
+    def from_json(cls, client: "DriveApiClient", repo_json: RepoAsJSON) -> "Repo":
         return cls(client, **repo_json)
 
     def is_readonly(self):
         return 'w' not in self.perm
 
     @raise_does_not_exist('The requested file does not exist')
-    def get_file(self, path):
+    def get_file(self, path: str) -> SeafFile:
         """Get the file object located in `path` in this repo.
 
         Return a :class:`SeafFile` object
@@ -45,7 +63,7 @@ class Repo(object):
         return SeafFile(self, path, file_json['id'], "file", file_json['size'])
 
     @raise_does_not_exist('The requested dir does not exist')
-    def get_dir(self, path):
+    def get_dir(self, path: str) -> SeafDir:
         """Get the dir object located in `path` in this repo.
 
         Return a :class:`SeafDir` object
@@ -60,7 +78,7 @@ class Repo(object):
         dir.load_entries(dir_json)
         return dir
 
-    def delete(self):
+    def delete(self) -> None:
         """Remove this repo. Only the repo owner can do this"""
         self.client.delete('/api2/repos/' + self.id)
 
